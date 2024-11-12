@@ -24,88 +24,90 @@ the dataset
 ### PROGRAM:
 py
 ```
+# Import necessary libraries
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from statsmodels.tsa.stattools import adfuller
-from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
-from statsmodels.tsa.ar_model import AutoReg
-from sklearn.metrics import mean_squared_error
+import warnings
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
-# Load the petrol dataset
-data = pd.read_csv("/content/petrol.csv")
+# Suppress warnings
+warnings.filterwarnings('ignore')
 
-# Display dataset information
+# Read the dataset from the uploaded CSV file
+file_path = 'petrol.csv'  # Path to the uploaded dataset
+data = pd.read_csv(file_path)
+
+# Display the shape and the first few rows of the dataset
 print("Shape of the dataset:", data.shape)
-print("First 50 rows of the dataset:")
-print(data.head(50))
+print("First 20 rows of the dataset:")
+print(data.head(20))
 
-# Replace 'Price' with the actual column name you want to analyze from the petrol.csv file
-plt.plot(data['Chennai'].head(50))
-plt.title('First 50 values of the "Price" column')
-plt.xlabel('Index')
-plt.ylabel('Petrol Price')
-plt.show()
+# Ensure the 'Date' column is in datetime format and set it as index
+data['Date'] = pd.to_datetime(data['Date'])
+data.set_index('Date', inplace=True)
 
-# Calculate rolling mean with window size 5
-rolling_mean_5 = data['Chennai'].rolling(window=5).mean()
-
-print("First 10 values of the rolling mean with window size 5:")
-print(rolling_mean_5.head(10))
-
-# Calculate rolling mean with window size 10
-rolling_mean_10 = data['Chennai'].rolling(window=10).mean()
-
-# Plot original data and fitted value using rolling mean
-plt.plot(data['Chennai'], label='Original Data')
-plt.plot(rolling_mean_10, label='Rolling Mean (window=10)')
-plt.title('Original Data and Fitted Value (Rolling Mean)')
-plt.xlabel('Index')
-plt.ylabel('Petrol Price')
+# Plot Original
+plt.figure(figsize=(12, 6))
+plt.plot(data['Chennai'], label='Petrol Price', color='blue')
+plt.title('Original Petrol Price (Chennai)')
+plt.xlabel('Date')
+plt.ylabel('Price (Chennai)')
 plt.legend()
+plt.grid()
 plt.show()
 
-# AutoRegressive (AR) model with lag order of 13
-lag_order = 13
-model = AutoReg(data['Chennai'], lags=lag_order)
+# Moving Average
+# Perform rolling average transformation with a window size of 3 (adjust as needed)
+rolling_mean_3 = data['Chennai'].rolling(window=3).mean()
+
+# Plot Moving Average
+plt.figure(figsize=(12, 6))
+plt.plot(data['Chennai'], label='Petrol Price', color='blue')
+plt.plot(rolling_mean_3, label='Moving Average (window=3)', color='orange')
+plt.title('Moving Average of Petrol Price (Chennai)')
+plt.xlabel('Date')
+plt.ylabel('Petrol Price (Chennai)')
+plt.legend()
+plt.grid()
+plt.show()
+
+# Exponential Smoothing
+model = ExponentialSmoothing(data['Chennai'], trend='add', seasonal=None)
 model_fit = model.fit()
 
-# Plot ACF and PACF
-plot_acf(data['Chennai'])
-plt.title('Autocorrelation Function (ACF)')
-plt.show()
+# Make predictions for the next 5 periods (adjust as needed)
+future_steps = 5
+predictions = model_fit.predict(start=len(data), end=len(data) + future_steps - 1)
 
-plot_pacf(data['Chennai'])
-plt.title('Partial Autocorrelation Function (PACF)')
-plt.show()
+# Create a future index for the predicted dates
+future_dates = pd.date_range(start=data.index[-1] + pd.Timedelta(days=1), periods=future_steps)
 
-# Generate predictions
-predictions = model_fit.predict(start=lag_order, end=len(data)-1)
-
-# Calculate and print Mean Squared Error (MSE)
-mse = mean_squared_error(data['Chennai'][lag_order:], predictions)
-print('Mean Squared Error (MSE):', mse)
-
-# Plot predictions vs original data
-plt.plot(data['Chennai'][lag_order:], label='Original Data')
-plt.plot(predictions, label='Predictions', color='red')
-plt.title('AR Model Predictions vs Original Data')
-plt.xlabel('Index')
-plt.ylabel('Petrol Price')
+# Plot the original data and Exponential Smoothing predictions
+plt.figure(figsize=(12, 6))
+plt.plot(data['Chennai'], label='Petrol Price', color='blue')
+plt.plot(future_dates, predictions, label='Exponential Smoothing Forecast', color='orange')
+plt.title('Exponential Smoothing Predictions for Petrol Price (Chennai)')
+plt.xlabel('Date')
+plt.ylabel('Petrol Price (Chennai)')
 plt.legend()
+plt.xticks(rotation=45)
+plt.grid(True)
+plt.tight_layout()
 plt.show()
+
 
 ```
 
 ### OUTPUT:
 
-![{02B0DC78-9479-4B53-BC0F-03A8FBFE79AE}](https://github.com/user-attachments/assets/9fe50f7e-539d-4a50-895b-b1d9a1b32c81)
+![image](https://github.com/user-attachments/assets/8ad10e45-6d1f-4ab7-9d93-2dac6748aa6a)
 
 
-![{33846C93-1493-4A8B-823F-4450794B8CCB}](https://github.com/user-attachments/assets/51115b99-a10f-4434-a281-91fd3043a623)
-![{1961C532-4230-4480-8BE1-5C17EE54B9E6}](https://github.com/user-attachments/assets/1cb04d82-b004-4b43-845b-4937c7748e5d)
+![image](https://github.com/user-attachments/assets/e1ac9676-8287-4637-b28a-2d7e7c375f13)
+![image](https://github.com/user-attachments/assets/eb5adb43-28c8-4c85-b523-ba3dcd66d87c)
 
-![{9E0D05BF-5F6E-4A66-8F3E-512DCA30AC04}](https://github.com/user-attachments/assets/76561cf3-9e4f-4423-87c8-a9f436d86eba)
+![image](https://github.com/user-attachments/assets/4c0b5534-fda7-4824-9131-42949aa367db)
 
 
 
